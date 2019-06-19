@@ -6,6 +6,7 @@ This is an updated version of Razorpay gravity forms plugin which the Razorpay t
 * As soon as a payment gets processed the payment status gets set to **Processing** and if an entry has a payment status processing that means it has not been completed yet.
 * The Pay and cancel button doesn't show anymore as the payment popup auto opens
 * Updated the PHP SDK to the currently available latest version v2.5
+* Supports all currency payment
 
 ### Still existing problem
 * Due to the weired nature of Razorpay API, processing payment and other design issues are there. I didn't have anymore time to look into them.

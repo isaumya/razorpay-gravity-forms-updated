@@ -16,7 +16,7 @@ This is the official Razorpay payment gateway plugin for Gravity Forma. Allows y
 
 */
 
-define('GF_RAZORPAY_VERSION', '0.1');
+define('GF_RAZORPAY_VERSION', '1.1.1');
 
 add_action('gform_loaded', array('GF_Razorpay_Bootstrap', 'load'), 5);
 

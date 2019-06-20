@@ -1,18 +1,18 @@
 <?php
 /*
-Plugin Name: Gravity Forms for Razorpay
-Plugin URI: http://www.gravityforms.com
+Plugin Name: Razorpay Payment Gateway for Gravity Forms
+Plugin URI: https://github.com/isaumya/razorpay-gravity-forms-updated
 Description: Integrates Gravity Forms with Razorpay Payments, enabling end users to purchase goods and services through Gravity Forms.
-Version: 1.1
+Version: 1.1.1
 Author: Saumya Majumder
 Author URI: https://www.isaumya.com
 Text Domain: razorpay-gravity-forms
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+License: GPLv3 or later
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
 == Description ==
 
-This is the Razorpay payment gateway plugin for Gravity Forma. Allows you to accept credit cards, debit cards, netbanking and wallet with the gravity form plugin. It uses a seamles integration, allowing the customer to pay on your website without being redirected away from your website.
+This is the official Razorpay payment gateway plugin for Gravity Forma. Allows you to accept credit cards, debit cards, netbanking and wallet with the gravity form plugin. It uses a seamles integration, allowing the customer to pay on your website without being redirected away from your website.
 
 */
 

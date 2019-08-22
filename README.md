@@ -32,6 +32,7 @@ All the changes that has been made to this pplugin on version to version basis.
 
 ### v1.2.0 & v1.2.1 - 22/08/2019
 * Fixed some typos
+* Payment popup description can be entered from settings.
 * Added IP Stack API support - one of the major problem with Razorpay payment form (specially for international payments) in the the phone number field, it doesn't specify in which style the number needs to be entered. For example you can type +919830098300 or you can type 9830098300. IIn the second case,  Razorpay automatically adds +91 to your number ince your international clients won'tr get any SMS. With the help of thsi feature, the +Country Code will automatically be added before the number. - This feature uses ipstack.com API.
 
 ### v1.1.1 - 02/06/2019

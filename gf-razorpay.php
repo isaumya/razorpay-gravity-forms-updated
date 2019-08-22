@@ -3,7 +3,7 @@
 Plugin Name: Razorpay Payment Gateway for Gravity Forms
 Plugin URI: https://github.com/isaumya/razorpay-gravity-forms-updated
 Description: Integrates Gravity Forms with Razorpay Payments, enabling end users to purchase goods and services through Gravity Forms.
-Version: 1.2.1
+Version: 1.2.2
 Author: Saumya Majumder
 Author URI: https://www.isaumya.com
 Text Domain: razorpay-gravity-forms
@@ -16,7 +16,7 @@ This is the official Razorpay payment gateway plugin for Gravity Forma. Allows y
 
 */
 
-define('GF_RAZORPAY_VERSION', '1.2.1');
+define('GF_RAZORPAY_VERSION', '1.2.2');
 
 add_action('gform_loaded', array('GF_Razorpay_Bootstrap', 'load'), 5);
 

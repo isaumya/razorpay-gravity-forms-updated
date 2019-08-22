@@ -103,26 +103,140 @@ class GFRazorpay extends GFPaymentAddOn {
         'title'           => 'Razorpay Settings',
         'fields'          => array(
           array(
+            'label'       => esc_html__( 'Comapny Name', $this->_slug ),
             'name'        => 'gf_razorpay_company_name',
-            'label'       => esc_html__('Comapny Name', $this->_slug),
+            'tooltip'     => esc_html__( 'Enter the company name that will be shown on Razorpay Payment poup to the users.', $this->_slug ),
             'type'        => 'text',
             'class'       => 'medium',
           ),
           array(
+            'label'       => esc_html__( 'Razorpay Key', $this->_slug ),
             'name'        => self::GF_RAZORPAY_KEY,
-            'label'       => esc_html__('Test Razorpay Key', $this->_slug),
+            'tooltip'     => esc_html__( 'If you are doing Testing, make sure you provide the Razorpay TEST Key here. When you want to use for the LIVE site, the use the Razorpay LIVE Key that you have received from Razorpay dashboard.', $this->_slug ),
             'type'        => 'text',
             'class'       => 'medium',
           ),
           array(
+            'label'       => esc_html__( 'Razorpay Secret', $this->_slug ),
             'name'        => self::GF_RAZORPAY_SECRET,
-            'label'       => esc_html__('Test Razorpay Secret', $this->_slug),
+            'tooltip'     => esc_html__( 'If you are doing Testing, make sure you provide the Razorpay TEST Secret here. When you want to use for the LIVE site, the use the Razorpay LIVE Secret that you have received from Razorpay dashboard.', $this->_slug ),
             'type'        => 'text',
             'class'       => 'medium',
-          )
+          ),
+          // Added in v1.2.0
+          array(
+            'label'       => esc_html__( 'Want to use IPStack API?', $this->_slug ),
+            'type'        => 'radio',
+            'horizontal'  => true,
+            'name'        => 'gf_use_ipstack_api',
+            'tooltip'     => esc_html__( 'Do you want to use ipstack.com API key to automatically add country codes before the phone number automatically? So, the the customer do not have any misunderstanding regarding the phone number field format.', $this->_slug ),
+            'default_value' => 'no',
+            'choices'     => array(
+              array(
+                'label'   => esc_html__( 'Yes', $this->_slug ),
+                'value'   => 'yes'
+              ),
+              array(
+                'label'   => esc_html__( 'No', $this->_slug ),
+                'value'   => 'no',
+                'selected' => true
+              )
+            ),
+          ),
+          array(
+            'label'       => esc_html__( 'IP Stack API Key (ipstack.com)', $this->_slug ),
+            'name'        => 'gf_ipstack_api_key',
+            'tooltip'     => esc_html__( 'You will get the API key by visiting IPStack.com and selecting the package that suites your business need.', $this->_slug ),
+            'type'        => 'text',
+            'class'       => 'medium',
+          ),
         ),
       ),
     );
+  }
+
+  /**
+   * Function to fetch the user IP address
+   * @since v1.2.0
+   */
+  private function get_client_ip() {
+    $ipArr = array();
+
+    foreach (array('HTTP_CF_CONNECTING_IP', 'HTTP_X_ORIGINATING_IP', 'HTTP_X_REMOTE_IP', 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR') as $key) {
+      if (array_key_exists($key, $_SERVER) === true) {
+        foreach (explode(',', $_SERVER[$key]) as $ip) {
+          $ip = trim($ip); // just to be safe
+
+          if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+            array_push($ipArr, $ip);
+          }
+        }
+      }
+    }
+
+    $currentIP = '';
+    $actualIP = '';
+
+    foreach ($ipArr as $ip) {
+      if ($ip !== $_SERVER['SERVER_ADDR']) {
+        if ($currentIP !== $ip) {
+          $currentIP = $ip;
+          $actualIP = $ip;
+        }
+      }
+    }
+
+    return $actualIP;
+  }
+
+  /**
+   * Function to get all the data from the IP address
+   * @since v1.2.0
+   */
+  private function get_client_ip_details() {
+    // Get the user IP
+    $ip = $this->get_client_ip();
+
+    // Check if the user has enabled IP Stack API
+    if( $this->get_plugin_setting( 'gf_use_ipstack_api' ) === 'yes' ) {
+      // Fetch the IT Stack API Key
+      $accessKey = $this->get_plugin_setting( 'gf_ipstack_api_key' );
+
+      //Initialize cURL:
+      $ch = curl_init('http://api.ipstack.com/' . $ip . '?access_key=' . $accessKey . '');
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+      // Stote the data
+      $userLocationDtlsJSON = curl_exec($ch);
+      curl_close($ch);
+
+      // Decode JSON response
+      $apiResult = json_decode( $userLocationDtlsJSON, true );
+
+      //echo print_r($apiResult);
+
+      return $apiResult;
+    } else {
+      // User don't want to use the IP Stack API
+      // So, return empty string
+      return '';
+    }
+  }
+
+  /**
+   * Get the calling code of the user
+   * @since v1.2.0
+   */
+  private function get_client_calling_code() {
+    $clientIPDtls = $this->get_client_ip_details();
+
+    // Check if $clientIPDtls is a blank string then return blank string
+    if( $clientIPDtls === '' ) {
+      return '';
+    } else {
+      $callingCode = '+' . $clientIPDtls["location"]["calling_code"];
+      return $callingCode;
+    }
   }
 
   public function feed_list_no_item_message() {
@@ -212,6 +326,35 @@ class GFRazorpay extends GFPaymentAddOn {
 
     $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
 
+    /**
+     * Get customer calling code
+     * @since v1.2.0
+     */
+    $callingCode = $this->get_client_calling_code();
+
+    /**
+     * Check if the user provided phone number is in full international format
+     * by checking if it has + sign in it. If $customerFields[self::CUSTOMER_FIELDS_CONTACT] iis empty
+     * Then simply return the calling code,
+     * Otherwise remove all whitespace from the number, then check if it has a + sign in it and process accordingly.
+     * @since v1.2.0
+     */
+    if( trim( $customerFields[self::CUSTOMER_FIELDS_CONTACT] ) === '' ) {
+      $mobileNumber = $callingCode;
+    } else {
+      // Remove any whitespace from the phone number given by the user
+      $mobileNumber = trim( preg_replace( '/\s+/', '', $customerFields[self::CUSTOMER_FIELDS_CONTACT] ) );
+
+      // Now check if the user given number has + sign in it to ensure if it is full international format or not
+      if( strpos( $mobileNumber, '+' ) !== false ) {
+        // + sign exists and the phone number provided is in full international format
+        // Do nothing to the $mobileNumber
+      } else {
+        // Prepend the calling code with the number
+        $mobileNumber = $callingCode . $mobileNumber;
+      }
+    }
+
     $razorpayArgs = [
       'key'         => $key,
       'name'        => $this->get_plugin_setting('gf_razorpay_company_name'),
@@ -220,8 +363,8 @@ class GFRazorpay extends GFPaymentAddOn {
       'description' => $form['description'],
       'prefill'     => [
         'name'    => $customerFields[self::CUSTOMER_FIELDS_NAME],
-        'email'   => $customerFields[self::CUSTOMER_FIELDS_EMAIL],
-        'contact' => $customerFields[self::CUSTOMER_FIELDS_CONTACT],
+        'email'   => trim($customerFields[self::CUSTOMER_FIELDS_EMAIL]),
+        'contact' => $mobileNumber, // Updated in v1.2.0
       ],
       'notes'       => [
         'gravity_forms_order_id' => $entry['id']
@@ -269,7 +412,7 @@ class GFRazorpay extends GFPaymentAddOn {
         <div class='rzp-loading-animation'>
           <?xml version='1.0' encoding='UTF-8' standalone='no'?><svg xmlns:svg='http://www.w3.org/2000/svg' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' version='1.0' width='64px' height='64px' viewBox='0 0 128 128' xml:space='preserve'><g><path d='M64 0L40.08 21.9a10.98 10.98 0 0 0-5.05 8.75C34.37 44.85 64 60.63 64 60.63V0z' fill='#ffb118'/><path d='M128 64l-21.88-23.9a10.97 10.97 0 0 0-8.75-5.05C83.17 34.4 67.4 64 67.4 64H128z' fill='#80c141'/><path d='M63.7 69.73a110.97 110.97 0 0 1-5.04-20.54c-1.16-8.7.68-14.17.68-14.17h38.03s-4.3-.86-14.47 10.1c-3.06 3.3-19.2 24.58-19.2 24.58z' fill='#cadc28'/><path d='M64 128l23.9-21.88a10.97 10.97 0 0 0 5.05-8.75C93.6 83.17 64 67.4 64 67.4V128z' fill='#cf171f'/><path d='M58.27 63.7a110.97 110.97 0 0 1 20.54-5.04c8.7-1.16 14.17.68 14.17.68v38.03s.86-4.3-10.1-14.47c-3.3-3.06-24.58-19.2-24.58-19.2z' fill='#ec1b21'/><path d='M0 64l21.88 23.9a10.97 10.97 0 0 0 8.75 5.05C44.83 93.6 60.6 64 60.6 64H0z' fill='#018ed5'/><path d='M64.3 58.27a110.97 110.97 0 0 1 5.04 20.54c1.16 8.7-.68 14.17-.68 14.17H30.63s4.3.86 14.47-10.1c3.06-3.3 19.2-24.58 19.2-24.58z' fill='#00bbf2'/><path d='M69.73 64.34a111.02 111.02 0 0 1-20.55 5.05c-8.7 1.14-14.15-.7-14.15-.7V30.65s-.86 4.3 10.1 14.5c3.3 3.05 24.6 19.2 24.6 19.2z' fill='#f8f400'/><circle cx='64' cy='64' r='2.03'/><animateTransform attributeName='transform' type='rotate' from='0 64 64' to='-360 64 64' dur='2700ms' repeatCount='indefinite'></animateTransform></g></svg>
         </div>
-        <h2 class='rzp-message'>Please wait while we are processing your payment.</h2>
+        <p class='rzp-message'>Please wait while we are processing your payment.</p>
       </div>
     </div>
     <p style='display:none'>

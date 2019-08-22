@@ -109,6 +109,14 @@ class GFRazorpay extends GFPaymentAddOn {
             'type'        => 'text',
             'class'       => 'medium',
           ),
+          // Added in v1.2.1
+          array(
+            'label'       => esc_html__( 'Comapny Small Description', $this->_slug ),
+            'name'        => 'gf_razorpay_company_desc',
+            'tooltip'     => esc_html__( 'This description will be shown in the payment popup form, below the company name.', $this->_slug ),
+            'type'        => 'text',
+            'class'       => 'medium',
+          ),
           array(
             'label'       => esc_html__( 'Razorpay Key', $this->_slug ),
             'name'        => self::GF_RAZORPAY_KEY,
@@ -360,7 +368,7 @@ class GFRazorpay extends GFPaymentAddOn {
       'name'        => $this->get_plugin_setting('gf_razorpay_company_name'),
       'amount'      => $entry['payment_amount'] * 100,
       'currency'    => $entry['currency'],
-      'description' => $form['description'],
+      'description' => $this->get_plugin_setting( 'gf_razorpay_company_desc' ), // Updated in v1.2.1
       'prefill'     => [
         'name'    => $customerFields[self::CUSTOMER_FIELDS_NAME],
         'email'   => trim($customerFields[self::CUSTOMER_FIELDS_EMAIL]),
